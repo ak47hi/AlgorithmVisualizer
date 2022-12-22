@@ -1,0 +1,5 @@
+.hexagon {
+    position: absolute;
+    border-radius: 10px 10px 0 0;
+    transform: rotate(60deg);
+  }
