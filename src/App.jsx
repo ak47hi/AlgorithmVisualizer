@@ -10,11 +10,11 @@ function App() {
 
   return (
     <div className="App">
-      {/* <PathFindingHexGrid /> */}
+      <PathFindingHexGrid />
 
       {/* <Canvas /> */}
 
-      <SquareGrid />
+      {/* <SquareGrid /> */}
     </div>
   );
 }

@@ -1,51 +1,51 @@
 import React, { useRef, useEffect } from "react";
 
-const CircleCanvas = () => {
+export default function HexagonCanvas() {
   const canvasRef = useRef(null);
-  const colorRef = useRef("blue");
 
   useEffect(() => {
-    const ctx = canvasRef.current.getContext("2d");
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+
+    // Set the fill style to red
+    ctx.fillStyle = "red";
+
+    // Begin the path
     ctx.beginPath();
-    ctx.arc(100, 100, 50, 0, 2 * Math.PI);
-    ctx.fillStyle = colorRef.current;
+
+    // Calculate the coordinates for the hexagon vertices
+    const radius = 100;
+    const x = canvas.width / 2;
+    const y = canvas.height / 2;
+    for (let i = 0; i < 6; i++) {
+      const angle = (2 * Math.PI * i) / 6;
+      const xPos = x + radius * Math.cos(angle);
+      const yPos = y + radius * Math.sin(angle);
+      ctx.lineTo(xPos, yPos);
+    }
+
+    // Close the path and fill the hexagon
+    ctx.closePath();
     ctx.fill();
+
+    // Set the mouseenter and mouseleave event listeners
+    canvas.addEventListener("mouseenter", (event) => {
+      const mouseX = event.offsetX;
+      const mouseY = event.offsetY;
+      if (ctx.isPointInPath(mouseX, mouseY)) {
+        ctx.fillStyle = "blue";
+        ctx.fill();
+      }
+    });
+    canvas.addEventListener("mouseleave", (event) => {
+      const mouseX = event.offsetX;
+      const mouseY = event.offsetY;
+      if (!ctx.isPointInPath(mouseX, mouseY)) {
+        ctx.fillStyle = "red";
+        ctx.fill();
+      }
+    });
   }, []);
 
-  const handleMouseEnter = () => {
-    colorRef.current = "red";
-    updateCanvas();
-  };
-
-  const handleMouseLeave = () => {
-    colorRef.current = "blue";
-    updateCanvas();
-  };
-
-  const updateCanvas = () => {
-    const ctx = canvasRef.current.getContext("2d");
-    ctx.beginPath();
-    ctx.arc(100, 100, 50, 0, 2 * Math.PI);
-    ctx.fillStyle = colorRef.current;
-    ctx.fill();
-  };
-
-  return (
-    <div>
-      <div
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        style={{ position: "relative" }}
-      >
-        <canvas
-          ref={canvasRef}
-          width={800}
-          height={600}
-          style={{ position: "absolute" }}
-        />
-      </div>
-    </div>
-  );
-};
-
-export default CircleCanvas;
+  return <canvas height="800" width="1000" ref={canvasRef} />;
+}

@@ -230,6 +230,22 @@ export default function Canvas() {
     ctx.closePath();
   }
 
+  function FillHexColor(context, center, color, width) {
+    const ctx = context;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    let start = GetHexCorner(center, 0);
+    ctx.moveTo(start.x, start.y);
+    for (let i = 1; i <= 5; i++) {
+      let coordinates = GetHexCorner(center, i);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.lineTo(coordinates.x, coordinates.y);
+      // ctx.stroke();
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
   // GETS THE CORNER OF A HEXAGON WHEN GIVEN THE CENTER OF THE HEXAGON AND THE NUMBER OF THE HEXAGON
 
   function GetHexCorner(center, i) {
@@ -274,7 +290,45 @@ export default function Canvas() {
     const { q, r, s } = CubeRound(PixelToHex(Point(offsetX, offsetY)));
     const { x, y } = HexToPixel(Hex(q, r, s));
     DrawNeighbors(context, Hex(q, r, s));
-    DrawHex(context, Point(x, y), "lime", 2);
+
+    // DrawHex(context, Point(x, y), "lime", 2);
+    FillHexColor(context, Point(x, y), "lime", 1);
+
+    // let center = Point(x, y);
+    // let startTime;
+    // let transitionDuration = 1000;
+    // let color = "green";
+    // let width = 2;
+    // function AnimateHex(timestamp) {
+    //   if (!startTime) startTime = timestamp;
+
+    //   let progress = (timestamp - startTime) / transitionDuration;
+    //   // Calculate the current color based on the progress
+    //   let r = Math.round(255 * progress);
+    //   let g = Math.round(255 * (1 - progress));
+    //   let b = 0;
+    //   let BgColor = `rgb(${r}, ${g}, ${b})`;
+
+    //   for (let i = 0; i <= 5; i++) {
+    //     let start = GetHexCorner(center, i);
+    //     let end = GetHexCorner(center, i + 1);
+    //     DrawLine(
+    //       context,
+    //       { x: start.x, y: start.y },
+    //       { x: end.x, y: end.y },
+    //       color,
+    //       width
+    //     );
+    //   }
+    //   context.closePath();
+    //   context.fillStyle = BgColor;
+    //   if (progress < 1) {
+    //     // If the transition is not complete, request another animation frame
+    //     requestAnimationFrame(AnimateHex);
+    //   }
+    // }
+    // requestAnimationFrame(AnimateHex);
+
     console.log(`q : ${q}, r : ${r}, s: ${s},  x: ${x}, y: ${y}`);
 
     if (currentHex.q != q || currentHex.r != r || currentHex.s != s) {
