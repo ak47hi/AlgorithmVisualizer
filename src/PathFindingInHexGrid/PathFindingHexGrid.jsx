@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 // import { create } from "tar";
 import "./HexGrid.css";
+import { dijkstra, getNodesInShortestPathOrder } from "../algorithms/dijkstra";
 
 const START_NODE_ROW = 2;
 const START_NODE_COL = -8;
@@ -15,18 +16,6 @@ export default function Canvas() {
     r: 0,
     s: 0,
   });
-
-  const stateObject = {
-    hexSize: 20,
-    hexOrigin: { x: 300, y: 300 },
-  };
-
-  const [canvasState, setCanvasState] = useState({
-    canvasSize: { canvasWidth: 1000, canvasHeight: 800 },
-    hexParams: GetHexParameters(),
-  });
-
-  // CREATING NODE
   const createNode = (q, r) => {
     return {
       q,
@@ -39,6 +28,22 @@ export default function Canvas() {
       previousNode: null,
     };
   };
+  const stateObject = {
+    hexSize: 20,
+    hexOrigin: { x: 300, y: 300 },
+  };
+
+  const [canvasState, setCanvasState] = useState({
+    canvasSize: { canvasWidth: 1000, canvasHeight: 800 },
+    hexParams: GetHexParameters(),
+  });
+
+  const [gridMap, setGridMap] = useState({
+    grid: getInitialGrid(),
+    mouseIsPressed: false,
+  });
+
+  // CREATING NODE
 
   // THIS USEEFFECT GETS CALLED TO JUST DRAW THE INITIAL GRID OF HEXAGON ON THE CANVAS
   // AFTER FIRST RENDER - ONLY ONCE
@@ -50,20 +55,170 @@ export default function Canvas() {
     }
     const context = canvas.getContext("2d");
     DrawHexagons(context);
+    // setGridMap({ ...gridMap, grid: grid });
     if (!context) {
       return;
     }
     console.log("change");
+    // console.log(grid);
+
+    // to Fill the Finish Node with a color
+    FillHexColor(
+      context,
+      HexToPixel(
+        Hex(
+          FINISH_NODE_COL,
+          FINISH_NODE_ROW,
+          -FINISH_NODE_ROW - FINISH_NODE_COL
+        )
+      ),
+      "red",
+      2
+    );
+    // to Fill the End Node with a color
+    FillHexColor(
+      context,
+      HexToPixel(
+        Hex(START_NODE_COL, START_NODE_ROW, -START_NODE_COL - START_NODE_ROW)
+      ),
+      "green",
+      2
+    );
   }, []);
 
   // THIS USEEFFECT GETS CALLED TO JUST DRAW THE INITIAL
 
-  useEffect(() => {
-    const canvasSecondCurrent = canvasCoord.current;
-    const ctx = canvasSecondCurrent.getContext("2d");
+  // useEffect(() => {
+  //   const canvasSecondCurrent = canvasCoord.current;
+  //   const ctx = canvasSecondCurrent.getContext("2d");
+  //   const { canvasWidth, canvasHeight } = canvasState.canvasSize;
+  //   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+  // }, [currentHex]);
+
+  // useEffect(() => {});
+  function findNodeIndexInGrid(r, q, grid) {
+    for (let i = 0; i < grid.length; i++) {
+      for (let j = 0; j < grid[i].length; j++) {
+        if (grid[i][j].q == q && grid[i][j].r == r) {
+          return { i: i, j: j };
+        }
+      }
+    }
+  }
+  const getNewGridWithWallToggled = (grid, r, q) => {
+    console.log(grid);
+    const newGrid = grid.slice();
+    const { i, j } = findNodeIndexInGrid(r, q, grid);
+    const node = newGrid[i][j];
+    const newNode = {
+      ...node,
+      isWall: !node.isWall,
+    };
+    newGrid[i][j] = newNode;
+    return newGrid;
+  };
+
+  function handleMouseDown(event, canvasPosition, canvasID) {
+    console.log("in mouse Down");
+    // console.log(event.clientlet offsetX = event.clientX, event.clientlet offsetY = event.clientY);
+    event.preventDefault();
+    event.stopPropagation();
+
+    let context = canvasID.getContext("2d");
+    let offsetX = event.clientX - canvasPosition.left;
+    let offsetY = event.clientY - canvasPosition.top;
+
+    const { q, r, s } = CubeRound(PixelToHex(Point(offsetX, offsetY)));
+    const { x, y } = HexToPixel(Hex(q, r, s));
+    FillHexColor(context, Point(x, y), "Brown", 1);
+    const newGrid = getNewGridWithWallToggled(gridMap.grid, r, q);
+    setGridMap({ ...gridMap, grid: newGrid, mouseIsPressed: true });
+  }
+
+  function handleMouseEnter(event, canvasPosition, canvasID) {
+    // console.log("in mouse Enter");
+    // console.log(event.clientlet offsetX = event.clientX, event.clientlet offsetY = event.clientY);
+
+    if (!gridMap.mouseIsPressed) return;
+    event.preventDefault();
+    event.stopPropagation();
+    let context = canvasID.getContext("2d");
+    let offsetX = event.clientX - canvasPosition.left;
+    let offsetY = event.clientY - canvasPosition.top;
+    const { q, r, s } = CubeRound(PixelToHex(Point(offsetX, offsetY)));
+    const { x, y } = HexToPixel(Hex(q, r, s));
+    FillHexColor(context, Point(x, y), "Brown", 1);
+    const newGrid = getNewGridWithWallToggled(gridMap.grid, r, q);
+    setGridMap({ ...gridMap, grid: newGrid });
+  }
+
+  function handleMouseUp() {
+    console.log("in mouse up");
+    // console.log(event.clientlet offsetX = event.clientX, event.clientlet offsetY = event.clientY);
+
+    setGridMap({ ...gridMap, mouseIsPressed: false });
+  }
+
+  // To get the initial grid
+
+  function getInitialGrid() {
+    const grid = [];
     const { canvasWidth, canvasHeight } = canvasState.canvasSize;
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-  }, [currentHex]);
+    const { hexHeight, hexWidth, vertDist, horizDist } = canvasState.hexParams;
+    const hexOrigin = stateObject.hexOrigin;
+    let qLeftSide = Math.round(hexOrigin.x / horizDist);
+    let qRightSide = Math.round((canvasWidth - hexOrigin.x) / horizDist);
+    let rTopSide = Math.round(hexOrigin.y / vertDist);
+    let rBottomSide = Math.round((canvasHeight - hexOrigin.y) / vertDist);
+    console.log(qLeftSide, qRightSide, rTopSide, rBottomSide);
+    var p = 0;
+    for (let r = 0; r <= rBottomSide; r++) {
+      let row = [];
+      if (r % 2 == 0 && r !== 0) {
+        p++;
+      }
+
+      for (let q = -qLeftSide; q <= qRightSide; q++) {
+        const { x, y } = HexToPixel(Hex(q - p, r));
+        if (
+          x > hexWidth / 2 &&
+          x < canvasWidth - hexWidth / 2 &&
+          y > hexHeight / 2 &&
+          y < canvasHeight - hexHeight / 2
+        ) {
+          // DrawHex(context, Point(x, y));
+          // DrawHexcoordinates(context, Point(x, y), Hex(q - p, r, -q - r + p));
+          row.push(createNode(q - p, r));
+        }
+      }
+      if (row.length != 0) {
+        grid.push(row);
+      }
+    }
+    var n = 0;
+    for (let r = -1; r >= -rTopSide; r--) {
+      let row = [];
+      if (r % 2 !== 0) n++;
+      for (let q = -qLeftSide; q <= qRightSide; q++) {
+        const { x, y } = HexToPixel(Hex(q + n, r));
+        if (
+          x > hexWidth / 2 &&
+          x < canvasWidth - hexWidth / 2 &&
+          y > hexHeight / 2 &&
+          y < canvasHeight - hexHeight / 2
+        ) {
+          // DrawHex(context, Point(x, y));
+          // DrawHexcoordinates(context, Point(x, y), Hex(q + n, r, -q - n - r));
+          row.push(createNode(q + n, r));
+        }
+      }
+      if (row.length != 0) {
+        grid.push(row);
+      }
+    }
+    // console.log(grid);
+    return grid;
+  }
 
   // TO DRAW A GRID OF HEXAGONS ON THE CANVAS
 
@@ -122,7 +277,8 @@ export default function Canvas() {
         grid.push(row);
       }
     }
-    console.log(grid);
+    // console.log(grid);
+    return grid;
   }
 
   // TO DRAW OR WRITE THE COORDINATES OF A HEXAGON WITHIN ITSELF ON A GRID OF HEXAGONS
@@ -241,7 +397,6 @@ export default function Canvas() {
       ctx.strokeStyle = color;
       ctx.lineWidth = width;
       ctx.lineTo(coordinates.x, coordinates.y);
-      // ctx.stroke();
     }
     ctx.closePath();
     ctx.fill();
@@ -283,73 +438,89 @@ export default function Canvas() {
   }
   // HANDLES THE MOUSE MOVE FUNCTION
   // THIS GETS CALLED EVERY TIME YOU MOVE THE MOUSE ON THE CANVAS
-  function HandleMouseMove(event, canvasPosition, canvasID) {
-    let context = canvasID.getContext("2d");
-    let offsetX = event.pageX - canvasPosition.left;
-    let offsetY = event.pageY - canvasPosition.top;
-    const { q, r, s } = CubeRound(PixelToHex(Point(offsetX, offsetY)));
-    const { x, y } = HexToPixel(Hex(q, r, s));
-    DrawNeighbors(context, Hex(q, r, s));
+  // function HandleMouseMove(event, canvasPosition, canvasID) {
+  //   let context = canvasID.getContext("2d");
+  //   let offsetX = event.clientX - canvasPosition.left;
+  //   let offsetY = event.clientY - canvasPosition.top;
+  //   const { q, r, s } = CubeRound(PixelToHex(Point(offsetX, offsetY)));
+  //   const { x, y } = HexToPixel(Hex(q, r, s));
+  //   DrawNeighbors(context, Hex(q, r, s));
 
-    // DrawHex(context, Point(x, y), "lime", 2);
-    FillHexColor(context, Point(x, y), "lime", 1);
+  //   // DrawHex(context, Point(x, y), "lime", 2);
+  //   FillHexColor(context, Point(x, y), "lime", 1);
 
-    // let center = Point(x, y);
-    // let startTime;
-    // let transitionDuration = 1000;
-    // let color = "green";
-    // let width = 2;
-    // function AnimateHex(timestamp) {
-    //   if (!startTime) startTime = timestamp;
+  //   // let center = Point(x, y);
+  //   // let startTime;
+  //   // let transitionDuration = 1000;
+  //   // let color = "green";
+  //   // let width = 2;
+  //   // function AnimateHex(timestamp) {
+  //   //   if (!startTime) startTime = timestamp;
 
-    //   let progress = (timestamp - startTime) / transitionDuration;
-    //   // Calculate the current color based on the progress
-    //   let r = Math.round(255 * progress);
-    //   let g = Math.round(255 * (1 - progress));
-    //   let b = 0;
-    //   let BgColor = `rgb(${r}, ${g}, ${b})`;
+  //   //   let progress = (timestamp - startTime) / transitionDuration;
+  //   //   // Calculate the current color based on the progress
+  //   //   let r = Math.round(255 * progress);
+  //   //   let g = Math.round(255 * (1 - progress));
+  //   //   let b = 0;
+  //   //   let BgColor = `rgb(${r}, ${g}, ${b})`;
 
-    //   for (let i = 0; i <= 5; i++) {
-    //     let start = GetHexCorner(center, i);
-    //     let end = GetHexCorner(center, i + 1);
-    //     DrawLine(
-    //       context,
-    //       { x: start.x, y: start.y },
-    //       { x: end.x, y: end.y },
-    //       color,
-    //       width
-    //     );
-    //   }
-    //   context.closePath();
-    //   context.fillStyle = BgColor;
-    //   if (progress < 1) {
-    //     // If the transition is not complete, request another animation frame
-    //     requestAnimationFrame(AnimateHex);
-    //   }
-    // }
-    // requestAnimationFrame(AnimateHex);
+  //   //   for (let i = 0; i <= 5; i++) {
+  //   //     let start = GetHexCorner(center, i);
+  //   //     let end = GetHexCorner(center, i + 1);
+  //   //     DrawLine(
+  //   //       context,
+  //   //       { x: start.x, y: start.y },
+  //   //       { x: end.x, y: end.y },
+  //   //       color,
+  //   //       width
+  //   //     );
+  //   //   }
+  //   //   context.closePath();
+  //   //   context.fillStyle = BgColor;
+  //   //   if (progress < 1) {
+  //   //     // If the transition is not complete, request another animation frame
+  //   //     requestAnimationFrame(AnimateHex);
+  //   //   }
+  //   // }
+  //   // requestAnimationFrame(AnimateHex);
 
-    console.log(`q : ${q}, r : ${r}, s: ${s},  x: ${x}, y: ${y}`);
+  //   console.log(`q : ${q}, r : ${r}, s: ${s},  x: ${x}, y: ${y}`);
 
-    if (currentHex.q != q || currentHex.r != r || currentHex.s != s) {
-      const handleChangeQRS = () => {
-        setCurrentHex({ ...currentHex, q: q, r: r, s: s });
-      };
-      handleChangeQRS();
-    }
+  //   if (currentHex.q != q || currentHex.r != r || currentHex.s != s) {
+  //     const handleChangeQRS = () => {
+  //       setCurrentHex({ ...currentHex, q: q, r: r, s: s });
+  //     };
+  //     handleChangeQRS();
+  //   }
 
-    console.log(currentHex);
-  }
+  //   console.log(currentHex);
+  // }
+
+  function visualizeDijkstra() {}
 
   return (
     <div>
+      <button onClick={() => visualizeDijkstra()}>
+        Visualize Dijkstra's Algorithm
+      </button>
       <canvas ref={canvasRef} width="1000" height="785"></canvas>
       <canvas
         ref={canvasCoord}
         width="1000"
         height="785"
-        onMouseMove={(e) => {
-          HandleMouseMove(
+        // onMouseMove={(e) => {
+        //   HandleMouseMove(
+        //     e,
+        //     {
+        //       left: canvasCoord.current.getBoundingClientRect().left,
+        //       right: canvasCoord.current.getBoundingClientRect().right,
+        //       top: canvasCoord.current.getBoundingClientRect().top,
+        //     },
+        //     canvasCoord.current
+        //   );
+        // }}
+        onMouseDown={(e) => {
+          handleMouseDown(
             e,
             {
               left: canvasCoord.current.getBoundingClientRect().left,
@@ -359,6 +530,19 @@ export default function Canvas() {
             canvasCoord.current
           );
         }}
+        onMouseMove={(e) => {
+          handleMouseEnter(
+            e,
+            {
+              left: canvasCoord.current.getBoundingClientRect().left,
+              right: canvasCoord.current.getBoundingClientRect().right,
+              top: canvasCoord.current.getBoundingClientRect().top,
+            },
+            canvasCoord.current
+          );
+        }}
+        onMouseUp={() => handleMouseUp()}
+        onMouseLeave={() => handleMouseUp()}
       ></canvas>
     </div>
   );
