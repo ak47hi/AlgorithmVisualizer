@@ -1,51 +1,49 @@
 import React, { useRef, useEffect } from "react";
 
-export default function HexagonCanvas() {
+const ColorChangeAnimation = () => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
 
-    // Set the fill style to red
-    ctx.fillStyle = "red";
+    // Set the initial fill style to green
+    ctx.fillStyle = `hsl(50 , 100%, 50%)`;
 
-    // Begin the path
+    // Draw the shape
     ctx.beginPath();
-
-    // Calculate the coordinates for the hexagon vertices
-    const radius = 100;
-    const x = canvas.width / 2;
-    const y = canvas.height / 2;
-    for (let i = 0; i < 6; i++) {
-      const angle = (2 * Math.PI * i) / 6;
-      const xPos = x + radius * Math.cos(angle);
-      const yPos = y + radius * Math.sin(angle);
-      ctx.lineTo(xPos, yPos);
-    }
-
-    // Close the path and fill the hexagon
-    ctx.closePath();
+    ctx.moveTo(75, 50);
+    ctx.lineTo(100, 75);
+    ctx.lineTo(100, 25);
     ctx.fill();
 
-    // Set the mouseenter and mouseleave event listeners
-    canvas.addEventListener("mouseenter", (event) => {
-      const mouseX = event.offsetX;
-      const mouseY = event.offsetY;
-      if (ctx.isPointInPath(mouseX, mouseY)) {
-        ctx.fillStyle = "blue";
-        ctx.fill();
+    let start = null;
+
+    const animate = (timestamp) => {
+      if (!start) start = timestamp;
+      const progress = timestamp - start;
+
+      // Update the fill style based on the progress of the animation
+      ctx.fillStyle = `hsl(${50 + progress / 10}, 100%, 50%)`;
+
+      // Clear the canvas and redraw the shape with the updated fill style
+      // ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.beginPath();
+      ctx.moveTo(75, 50);
+      ctx.lineTo(100, 75);
+      ctx.lineTo(100, 25);
+      ctx.fill();
+
+      // If the animation is not complete, request another frame
+      if (progress < 1000) {
+        requestAnimationFrame(animate);
       }
-    });
-    canvas.addEventListener("mouseleave", (event) => {
-      const mouseX = event.offsetX;
-      const mouseY = event.offsetY;
-      if (!ctx.isPointInPath(mouseX, mouseY)) {
-        ctx.fillStyle = "red";
-        ctx.fill();
-      }
-    });
+    };
+
+    requestAnimationFrame(animate);
   }, []);
 
-  return <canvas height="800" width="1000" ref={canvasRef} />;
-}
+  return <canvas ref={canvasRef} width={200} height={100} />;
+};
+
+export default ColorChangeAnimation;

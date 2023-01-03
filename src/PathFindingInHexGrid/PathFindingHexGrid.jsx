@@ -89,6 +89,35 @@ export default function Canvas() {
       "green",
       2
     );
+    let start = null;
+    function animateHex(timestamp, context, center, width) {
+      if (!start) start = timestamp;
+      const progress = timestamp - start;
+      const color = `hsl(${50 + progress / 10}, 100%, 50%)`;
+      const ctx = context;
+      ctx.fillStyle = color;
+
+      ctx.beginPath();
+      let position = GetHexCorner(center, 0);
+      ctx.moveTo(position.x, position.y);
+      for (let i = 1; i <= 5; i++) {
+        let coordinates = GetHexCorner(center, i);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        ctx.lineTo(coordinates.x, coordinates.y);
+      }
+      ctx.closePath();
+      ctx.fill();
+
+      if (progress < 1000) {
+        requestAnimationFrame((timestamp) =>
+          animateHex(timestamp, ctx, center, width)
+        );
+      }
+    }
+    requestAnimationFrame((timestamp) =>
+      animateHex(timestamp, context, HexToPixel(Hex(4, 0, -4)), 1)
+    );
   }, []);
 
   // THIS USEEFFECT GETS CALLED TO JUST DRAW THE INITIAL
@@ -111,7 +140,7 @@ export default function Canvas() {
   //   }
   // }
   const getNewGridWithWallToggled = (grid, r, q) => {
-    console.log(grid);
+    // console.log(grid);
     const newGrid = grid.slice();
     const { i, j } = findNodeIndexInGrid(r, q, grid);
     const node = newGrid[i][j];
@@ -124,7 +153,7 @@ export default function Canvas() {
   };
 
   function handleMouseDown(event, canvasPosition, canvasID) {
-    console.log("in mouse Down");
+    // console.log("in mouse Down");
     // console.log(event.clientlet offsetX = event.clientX, event.clientlet offsetY = event.clientY);
     event.preventDefault();
     event.stopPropagation();
@@ -141,17 +170,17 @@ export default function Canvas() {
         (item) => item.x === object.x && item.y === object.y
       )
     ) {
-      FillHexColor(context, Point(object.x, object.y), "Brown", 1);
       const newGrid = getNewGridWithWallToggled(gridMap.grid, r, q);
       setGridMap({ ...gridMap, grid: newGrid, mouseIsPressed: true });
       setWallSet(new Set([...wallSet, object]));
+      FillHexColor(context, Point(object.x, object.y), "Brown", 1);
     }
 
-    console.log(gridMap.grid);
+    // console.log(gridMap.grid);
   }
 
   function handleMouseEnter(event, canvasPosition, canvasID) {
-    console.log("in mouse Enter");
+    // console.log("in mouse Enter");
     // console.log(event.clientlet offsetX = event.clientX, event.clientlet offsetY = event.clientY);
 
     if (!gridMap.mouseIsPressed) return;
@@ -168,16 +197,16 @@ export default function Canvas() {
         (item) => item.x === object.x && item.y === object.y
       )
     ) {
-      FillHexColor(context, Point(object.x, object.y), "Brown", 1);
       const newGrid = getNewGridWithWallToggled(gridMap.grid, r, q);
       setGridMap({ ...gridMap, grid: newGrid, mouseIsPressed: true });
       setWallSet(new Set([...wallSet, object]));
+      FillHexColor(context, Point(object.x, object.y), "Brown", 1);
     }
-    console.log(gridMap.grid);
+    // console.log(gridMap.grid);
   }
 
   function handleMouseUp() {
-    console.log("in mouse up");
+    // console.log("in mouse up");
     // console.log(event.clientlet offsetX = event.clientX, event.clientlet offsetY = event.clientY);
 
     setGridMap({ ...gridMap, mouseIsPressed: false });
@@ -194,7 +223,7 @@ export default function Canvas() {
     let qRightSide = Math.round((canvasWidth - hexOrigin.x) / horizDist);
     let rTopSide = Math.round(hexOrigin.y / vertDist);
     let rBottomSide = Math.round((canvasHeight - hexOrigin.y) / vertDist);
-    console.log(qLeftSide, qRightSide, rTopSide, rBottomSide);
+    // console.log(qLeftSide, qRightSide, rTopSide, rBottomSide);
     var p = 0;
     for (let r = 0; r <= rBottomSide; r++) {
       let row = [];
@@ -255,7 +284,7 @@ export default function Canvas() {
     let qRightSide = Math.round((canvasWidth - hexOrigin.x) / horizDist);
     let rTopSide = Math.round(hexOrigin.y / vertDist);
     let rBottomSide = Math.round((canvasHeight - hexOrigin.y) / vertDist);
-    console.log(qLeftSide, qRightSide, rTopSide, rBottomSide);
+    // console.log(qLeftSide, qRightSide, rTopSide, rBottomSide);
     var p = 0;
     for (let r = 0; r <= rBottomSide; r++) {
       let row = [];
@@ -547,7 +576,7 @@ export default function Canvas() {
       // we must be trapped and should therefore stop.
       if (closestNode.distance === Infinity) return visitedNodesInOrder;
       closestNode.isVisited = true;
-      console.log(closestNode);
+      // console.log(closestNode);
       visitedNodesInOrder.push(closestNode);
       if (closestNode === finishNode) return visitedNodesInOrder;
       updateUnvisitedNeighbors(closestNode, grid);
@@ -555,7 +584,16 @@ export default function Canvas() {
   }
 
   function sortNodesByDistance(unvisitedNodes) {
-    unvisitedNodes.sort((nodeA, nodeB) => nodeA.distance - nodeB.distance);
+    // console.log(unvisitedNodes);
+    unvisitedNodes.sort((nodeA, nodeB) => {
+      if (nodeA.distance < nodeB.distance) {
+        return -1;
+      } else if (nodeA.distance > nodeB.distance) {
+        return 1;
+      } else {
+        return 0;
+      }
+    });
   }
 
   function updateUnvisitedNeighbors(node, grid) {
@@ -567,7 +605,7 @@ export default function Canvas() {
         neighbor.previousNode = node;
       }
     }
-    console.log(unvisitedNeighbors);
+    // console.log(unvisitedNeighbors);
   }
 
   function getHexUnvisitedNeighbors(h, grid) {
@@ -659,6 +697,31 @@ export default function Canvas() {
     return nodesInShortestPathOrder;
   }
   //---------------------------------------------------------------------------------
+  // function animateHex(timestamp, context, center, width) {
+  //   if (!start) start = timestamp;
+  //   const progress = timestamp - start;
+  //   const color = `hsl(${50 + progress / 10}, 100%, 50%)`;
+  //   ctx.fillStyle = color;
+  //   const ctx = context;
+
+  //   ctx.beginPath();
+  //   let start = GetHexCorner(center, 0);
+  //   ctx.moveTo(start.x, start.y);
+  //   for (let i = 1; i <= 5; i++) {
+  //     let coordinates = GetHexCorner(center, i);
+  //     ctx.strokeStyle = color;
+  //     ctx.lineWidth = width;
+  //     ctx.lineTo(coordinates.x, coordinates.y);
+  //   }
+  //   ctx.closePath();
+  //   ctx.fill();
+
+  //   if (progress < 1000) {
+  //     requestAnimationFrame((timestamp) =>
+  //       animateHex(timestamp, context, center, width)
+  //     );
+  //   }
+  // }
 
   function visualizeDijkstra(canvasID) {
     const grid = gridMap.grid;
@@ -680,11 +743,181 @@ export default function Canvas() {
 
     console.log(visitedNodesInOrder);
     let context = canvasID.getContext("2d");
-    for (const node of nodesInShortestPathOrder) {
-      const object = HexToPixel(node);
-      FillHexColor(context, Point(object.x, object.y), "lime", 1);
-    }
+    // AnimateHexNodesInOrder(context, visitedNodesInOrder);
+    // AnimateHexNodesInOrder(context, nodesInShortestPathOrder);
+
+    // for (let k = 0; k < nodesInShortestPathOrder.length; k++) {
+    //   const object = HexToPixel(nodesInShortestPathOrder[k]);
+    //   FillHexColor(context, Point(object.x, object.y), `hsl(50, 100%, 50%)`, 1);
+    //   // requestAnimationFrame((timestamp) =>
+    //   //   animateHex(timestamp, context, Point(object.x, object.y), color, width)
+    //   // );
+    //   let start = null;
+    //   function animateHex(timestamp, context, center, width) {
+    //     if (!start) start = timestamp;
+    //     const progress = timestamp - start;
+    //     const color = `hsl(${50 + progress / 10}, 100%, 50%)`;
+    //     const ctx = context;
+    //     ctx.fillStyle = color;
+
+    //     ctx.beginPath();
+    //     let position = GetHexCorner(center, 0);
+    //     ctx.moveTo(position.x, position.y);
+    //     for (let i = 1; i <= 5; i++) {
+    //       let coordinates = GetHexCorner(center, i);
+    //       ctx.strokeStyle = color;
+    //       ctx.lineWidth = width;
+    //       ctx.lineTo(coordinates.x, coordinates.y);
+    //     }
+    //     ctx.closePath();
+    //     ctx.fill();
+
+    //     if (progress < 1000) {
+    //       requestAnimationFrame((timestamp) =>
+    //         animateHex(timestamp, ctx, center, width)
+    //       );
+    //     }
+    //   }
+    //   requestAnimationFrame((timestamp) =>
+    //     animateHex(
+    //       timestamp,
+    //       context,
+    //       HexToPixel(
+    //         Hex(
+    //           nodesInShortestPathOrder[k].q,
+    //           nodesInShortestPathOrder[k].r,
+    //           -nodesInShortestPathOrder[k].q - nodesInShortestPathOrder[k].r
+    //         )
+    //       ),
+    //       1
+    //     )
+    //   );
+    // }
     console.log(nodesInShortestPathOrder);
+    AnimateDijstras(context, visitedNodesInOrder, nodesInShortestPathOrder);
+  }
+  function AnimateDijstras(
+    context,
+    visitedNodesInOrder,
+    nodesInShortestPathOrder
+  ) {
+    for (let k = 0; k < visitedNodesInOrder.length; k++) {
+      if (k == visitedNodesInOrder.length - 1) {
+        console.log("last node");
+        setTimeout(() => {
+          AnimateHexNodesInOrder(context, nodesInShortestPathOrder);
+        }, 50 * k);
+      }
+      setTimeout(() => {
+        const object = HexToPixel(visitedNodesInOrder[k]);
+        FillHexColor(
+          context,
+          Point(object.x, object.y),
+          `hsl(280, 100%, 50%)`,
+          1
+        );
+        // requestAnimationFrame((timestamp) =>
+        //   animateHex(timestamp, context, Point(object.x, object.y), color, width)
+        // );
+        let start = null;
+        function animateHex(timestamp, context, center, width) {
+          if (!start) start = timestamp;
+          const progress = timestamp - start;
+          const color = `hsl(${280 + progress / 10}, 100%, 50%)`;
+          const ctx = context;
+          ctx.fillStyle = color;
+
+          ctx.beginPath();
+          let position = GetHexCorner(center, 0);
+          ctx.moveTo(position.x, position.y);
+          for (let i = 1; i <= 5; i++) {
+            let coordinates = GetHexCorner(center, i);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.lineTo(coordinates.x, coordinates.y);
+          }
+          ctx.closePath();
+          ctx.fill();
+
+          if (progress < 1000) {
+            requestAnimationFrame((timestamp) =>
+              animateHex(timestamp, ctx, center, width)
+            );
+          }
+        }
+        requestAnimationFrame((timestamp) =>
+          animateHex(
+            timestamp,
+            context,
+            HexToPixel(
+              Hex(
+                visitedNodesInOrder[k].q,
+                visitedNodesInOrder[k].r,
+                -visitedNodesInOrder[k].q - visitedNodesInOrder[k].r
+              )
+            ),
+            1
+          )
+        );
+      }, 50 * k);
+    }
+  }
+
+  function AnimateHexNodesInOrder(context, nodesInOrder) {
+    for (let k = 0; k < nodesInOrder.length; k++) {
+      setTimeout(() => {
+        const object = HexToPixel(nodesInOrder[k]);
+        FillHexColor(
+          context,
+          Point(object.x, object.y),
+          `hsl(50, 100%, 50%)`,
+          1
+        );
+        // requestAnimationFrame((timestamp) =>
+        //   animateHex(timestamp, context, Point(object.x, object.y), color, width)
+        // );
+        let start = null;
+        function animateHex(timestamp, context, center, width) {
+          if (!start) start = timestamp;
+          const progress = timestamp - start;
+          const color = `hsl(${50 + progress / 10}, 100%, 50%)`;
+          const ctx = context;
+          ctx.fillStyle = color;
+
+          ctx.beginPath();
+          let position = GetHexCorner(center, 0);
+          ctx.moveTo(position.x, position.y);
+          for (let i = 1; i <= 5; i++) {
+            let coordinates = GetHexCorner(center, i);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.lineTo(coordinates.x, coordinates.y);
+          }
+          ctx.closePath();
+          ctx.fill();
+
+          if (progress < 1000) {
+            requestAnimationFrame((timestamp) =>
+              animateHex(timestamp, ctx, center, width)
+            );
+          }
+        }
+        requestAnimationFrame((timestamp) =>
+          animateHex(
+            timestamp,
+            context,
+            HexToPixel(
+              Hex(
+                nodesInOrder[k].q,
+                nodesInOrder[k].r,
+                -nodesInOrder[k].q - nodesInOrder[k].r
+              )
+            ),
+            1
+          )
+        );
+      }, 50 * k);
+    }
   }
 
   return (
@@ -693,11 +926,18 @@ export default function Canvas() {
         Visualize Dijkstra's Algorithm
       </button>
       <button onClick={() => testIsWall(gridMap.grid)}>get wall nodes</button>
-      <canvas ref={canvasRef} width="1000" height="785"></canvas>
+      <canvas
+        id="rectangle"
+        ref={canvasRef}
+        width="1000"
+        height="785"
+        // style={{ display: None }}
+      ></canvas>
       <canvas
         ref={canvasCoord}
         width="1000"
         height="785"
+        id="InvRectangle"
         // onMouseMove={(e) => {
         //   HandleMouseMove(
         //     e,
