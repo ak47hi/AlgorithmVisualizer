@@ -15,7 +15,6 @@ const canvasState = {
   canvasSize: { canvasWidth: 1520, canvasHeight: 560 },
   hexParams: GetHexParameters(),
 };
-
 function GetHexParameters() {
   let hexHeight = hexProps.hexSize * 2;
   let hexWidth = (Math.sqrt(3) / 2) * hexHeight;
@@ -24,44 +23,56 @@ function GetHexParameters() {
   return { hexHeight, hexWidth, vertDist, horizDist };
 }
 // import canvasState from "../PathFindingInHexGrid/PathFindingHexGrid";
-export function dijkstra(grid, startNode, finishNode) {
-  console.log(grid);
+export function BreadthFirstSearch(grid, startNode, finishNode) {
+  // console.log(grid);
   const visitedNodesInOrder = [];
-  startNode.distance = 0;
   // let count = 0;
-  const unvisitedNodes = getAllNodes(grid);
+  // const unvisitedNodes = getAllNodes(grid);
   // console.log(unvisitedNodes);
-  while (!!unvisitedNodes.length) {
-    sortNodesByDistance(unvisitedNodes);
-    // console.log(unvisitedNodes);
-    const closestNode = unvisitedNodes.shift();
-    // console.log(closestNode);
+  const stack = [];
+  stack.push(startNode);
+  startNode.isVisited = true;
+  visitedNodesInOrder.push(startNode);
+  // let count = 0;
+  while (!!stack.length) {
+    //   sortNodesByDistance(unvisitedNodes);
+    const closestNode = stack.shift();
+    console.log(closestNode);
+    // count++;
+    // if (count == 20) return visitedNodesInOrder;
+    // closestNode.isVisited = true;
     // If we encounter a wall, we skip it.
-    if (closestNode.isWall) {
-      // console.log(closestNode);
-      continue;
+    // if (closestNode.isWall) {
+    //   // console.log(closestNode);
+    //   continue;
+    if (closestNode === finishNode) return visitedNodesInOrder;
+    const unvisitedNeighbors = getHexUnvisitedNeighbors(closestNode, grid);
+    console.log(unvisitedNeighbors);
+    console.log(stack);
+    for (let i = 0; i < unvisitedNeighbors.length; i++) {
+      if (unvisitedNeighbors[i].isWall === true) {
+        continue;
+      } else if (unvisitedNeighbors[i] === finishNode) {
+        visitedNodesInOrder.push(unvisitedNeighbors[i]);
+        unvisitedNeighbors[i].isVisited = true;
+        unvisitedNeighbors[i].previousNode = closestNode;
+
+        return visitedNodesInOrder;
+      } else {
+        stack.push(unvisitedNeighbors[i]);
+        unvisitedNeighbors[i].isVisited = true;
+        visitedNodesInOrder.push(unvisitedNeighbors[i]);
+        unvisitedNeighbors[i].previousNode = closestNode;
+      }
     }
     // If the closest node is at a distance of infinity,
     // we must be trapped and should therefore stop.
-    if (closestNode.distance === Infinity) return visitedNodesInOrder;
-    closestNode.isVisited = true;
+    // if (closestNode.distance === Infinity) return visitedNodesInOrder;
     // console.log(closestNode);
-    visitedNodesInOrder.push(closestNode);
-    if (closestNode === finishNode) return visitedNodesInOrder;
-    updateUnvisitedNeighbors(closestNode, grid);
+    // visitedNodesInOrder.push(closestNode);
   }
-}
-
-function sortNodesByDistance(unvisitedNodes) {
-  // console.log(unvisitedNodes);
-  // const _ = require("lodash");
-
-  unvisitedNodes.sort((nodeA, nodeB) => {
-    if (nodeA.distance === nodeB.distance) {
-      return 0;
-    }
-    return nodeA.distance < nodeB.distance ? -1 : 1;
-  });
+  // updateUnvisitedNeighbors(closestNode, grid);
+  return visitedNodesInOrder;
 }
 
 function updateUnvisitedNeighbors(node, grid) {
@@ -202,7 +213,7 @@ function getAllNodes(grid) {
 
 // Backtracks from the finishNode to find the shortest path.
 // Only works when called *after* the dijkstra method above.
-export function getNodesInShortestPathOrderDijstra(finishNode) {
+export function getNodesInShortestPathOrderBFS(finishNode) {
   const nodesInShortestPathOrder = [];
   let currentNode = finishNode;
   while (currentNode !== null) {

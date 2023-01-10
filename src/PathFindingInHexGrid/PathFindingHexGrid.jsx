@@ -1,19 +1,34 @@
 import { useRef, useEffect, useState } from "react";
 // import { create } from "tar";
+import "bootstrap/dist/css/bootstrap.min.css";
+import logo from "../Pictures/MAV_edited_adobe_express.svg";
+import startImg from "../Pictures/green_hex_adobe_express.svg";
+import endImg from "../Pictures/red_hex_adobe_express.svg";
+import pathImg from "../Pictures/lime_hex_adobe_express.svg";
+import wallImg from "../Pictures/brown_hex_adobe_express.svg";
+import unvisitedImg from "../Pictures/grey_hex_adobe_express.svg";
+import visitedImg from "../Pictures/orange_hex_adobe_express.svg";
+import Button from "react-bootstrap/Button";
+
 import "./HexGrid.css";
 import {
   dijkstra,
-  getNodesInShortestPathOrder,
+  getNodesInShortestPathOrderDijstra,
 } from "../Algorithms/dijstraHexGrid";
 import {
   getNodesInShortestPathOrderAstar,
   Astar,
 } from "../Algorithms/AstarHex";
 
-const START_NODE_ROW = 2;
-const START_NODE_COL = -8;
-const FINISH_NODE_ROW = 2;
-const FINISH_NODE_COL = 17;
+import {
+  BreadthFirstSearch,
+  getNodesInShortestPathOrderBFS,
+} from "../Algorithms/BreadthFirstSearch";
+
+const START_NODE_ROW = 6;
+const START_NODE_COL = -10;
+const FINISH_NODE_ROW = -8;
+const FINISH_NODE_COL = 38;
 
 export default function Canvas() {
   const canvasRef = useRef(null);
@@ -45,7 +60,7 @@ export default function Canvas() {
   };
 
   const [canvasState, setCanvasState] = useState({
-    canvasSize: { canvasWidth: 1000, canvasHeight: 800 },
+    canvasSize: { canvasWidth: 1520, canvasHeight: 560 },
     hexParams: GetHexParameters(),
   });
 
@@ -55,6 +70,8 @@ export default function Canvas() {
   });
 
   const [wallSet, setWallSet] = useState(new Set());
+
+  const [selectedAlgorithm, setSelectedAlgorithm] = useState("BFS");
 
   // CREATING NODE
 
@@ -280,7 +297,8 @@ export default function Canvas() {
           y < canvasHeight - hexHeight / 2
         ) {
           DrawHex(context, Point(x, y));
-          DrawHexcoordinates(context, Point(x, y), Hex(q - p, r, -q - r + p));
+          FillHexColor(context, Point(x, y), `hsl(204, 8%, 76%)`, 1);
+          // DrawHexcoordinates(context, Point(x, y), Hex(q - p, r, -q - r + p));
           row.push(createNode(q - p, r));
         }
       }
@@ -301,7 +319,9 @@ export default function Canvas() {
           y < canvasHeight - hexHeight / 2
         ) {
           DrawHex(context, Point(x, y));
-          DrawHexcoordinates(context, Point(x, y), Hex(q + n, r, -q - n - r));
+          FillHexColor(context, Point(x, y), `hsl(204, 8%, 76%)`, 1);
+
+          // DrawHexcoordinates(context, Point(x, y), Hex(q + n, r, -q - n - r));
           row.push(createNode(q + n, r));
         }
       }
@@ -425,7 +445,7 @@ export default function Canvas() {
     ctx.moveTo(start.x, start.y);
     for (let i = 1; i <= 5; i++) {
       let coordinates = GetHexCorner(center, i);
-      ctx.strokeStyle = color;
+      ctx.strokeStyle = "black";
       ctx.lineWidth = width;
       ctx.lineTo(coordinates.x, coordinates.y);
     }
@@ -709,7 +729,7 @@ export default function Canvas() {
   //   }
   // }
 
-  function visualizeDijkstra(canvasID) {
+  function visualizeAlgorithm(canvasID, algoType) {
     const grid = gridMap.grid;
     console.log(grid);
 
@@ -724,18 +744,31 @@ export default function Canvas() {
       grid[findNodeIndexInGrid(FINISH_NODE_ROW, FINISH_NODE_COL, grid).i][
         findNodeIndexInGrid(FINISH_NODE_ROW, FINISH_NODE_COL, grid).j
       ];
-
     console.log(finishNode);
-
-    const visitedNodesInOrder = Astar(grid, startNode, finishNode);
-    const nodesInShortestPathOrder =
-      getNodesInShortestPathOrderAstar(finishNode);
-
-    console.log(visitedNodesInOrder);
     let context = canvasID.getContext("2d");
-
-    console.log(nodesInShortestPathOrder);
-    AnimateDijstras(context, visitedNodesInOrder, nodesInShortestPathOrder);
+    if (selectedAlgorithm == "A*") {
+      const visitedNodesInOrder = Astar(grid, startNode, finishNode);
+      const nodesInShortestPathOrder =
+        getNodesInShortestPathOrderAstar(finishNode);
+      AnimateDijstras(context, visitedNodesInOrder, nodesInShortestPathOrder);
+    } else if (selectedAlgorithm === "Dijstra's") {
+      const visitedNodesInOrder = dijkstra(grid, startNode, finishNode);
+      const nodesInShortestPathOrder =
+        getNodesInShortestPathOrderDijstra(finishNode);
+      AnimateDijstras(context, visitedNodesInOrder, nodesInShortestPathOrder);
+    } else if (selectedAlgorithm === "BFS") {
+      const visitedNodesInOrder = BreadthFirstSearch(
+        grid,
+        startNode,
+        finishNode
+      );
+      const nodesInShortestPathOrder =
+        getNodesInShortestPathOrderBFS(finishNode);
+      AnimateDijstras(context, visitedNodesInOrder, nodesInShortestPathOrder);
+    } else {
+      return;
+    }
+    // console.log(visitedNodesInOrder);
   }
 
   function AnimateDijstras(
@@ -861,61 +894,184 @@ export default function Canvas() {
       }, 50 * k);
     }
   }
-
+  function handleChange(event) {
+    setSelectedAlgorithm(event.target.value);
+  }
   return (
     <div>
-      <button onClick={() => visualizeDijkstra(canvasCoord.current)}>
-        Visualize Dijkstra's Algorithm
-      </button>
-      {/* <button onClick={() => testIsWall(gridMap.grid)}>get wall nodes</button> */}
-      <canvas
-        id="rectangle"
-        ref={canvasRef}
-        width="1000"
-        height="785"
-        // style={{ display: None }}
-      ></canvas>
-      <canvas
-        ref={canvasCoord}
-        width="1000"
-        height="785"
-        id="InvRectangle"
-        // onMouseMove={(e) => {
-        //   HandleMouseMove(
-        //     e,
-        //     {
-        //       left: canvasCoord.current.getBoundingClientRect().left,
-        //       right: canvasCoord.current.getBoundingClientRect().right,
-        //       top: canvasCoord.current.getBoundingClientRect().top,
-        //     },
-        //     canvasCoord.current
-        //   );
-        // }}
-        onMouseDown={(e) => {
-          handleMouseDown(
-            e,
-            {
-              left: canvasCoord.current.getBoundingClientRect().left,
-              right: canvasCoord.current.getBoundingClientRect().right,
-              top: canvasCoord.current.getBoundingClientRect().top,
-            },
-            canvasCoord.current
-          );
-        }}
-        onMouseMove={(e) => {
-          handleMouseEnter(
-            e,
-            {
-              left: canvasCoord.current.getBoundingClientRect().left,
-              right: canvasCoord.current.getBoundingClientRect().right,
-              top: canvasCoord.current.getBoundingClientRect().top,
-            },
-            canvasCoord.current
-          );
-        }}
-        onMouseUp={() => handleMouseUp()}
-        onMouseLeave={() => handleMouseUp()}
-      ></canvas>
+      <nav className="navbar navbar-expand-lg navbar-light bg-black">
+        <a href="/" className="navbar-brand mb-0 ">
+          <img
+            className="d-inline-block align-top"
+            src={logo}
+            width="170"
+            height="50"
+          />
+        </a>
+        <div className="collapse navbar-collapse" id="navbarNav">
+          <ul className="navbar-nav">
+            <li className="nav-item">
+              <select
+                className="form-control"
+                value={selectedAlgorithm}
+                onChange={handleChange}
+              >
+                <option value="BFS">BFS</option>
+                <option value="Dijstra's">Dijkstra's</option>
+                <option value="A*">A*</option>
+              </select>
+            </li>
+          </ul>
+        </div>
+        <Button
+          variant="secondary"
+          onClick={() => visualizeAlgorithm(canvasCoord.current, "Dijstra")}
+        >
+          Visualize
+        </Button>
+      </nav>
+
+      <div className="mainGrid">
+        <div>
+          <ul className="d-flex flex-row justify-content-between bg-black">
+            <li className="d-flex align-items-center text-white">
+              <img
+                src={startImg}
+                alt="Image 1"
+                className="pr-2"
+                style={{ width: "50px", height: "50px" }}
+              />
+              <span className="d-block pl-2" />
+              <span style={{ display: "block", paddingRight: "2px" }}>
+                Start
+              </span>
+            </li>
+            <li className="d-flex align-items-center text-white">
+              <img
+                src={endImg}
+                alt="Image 2"
+                className="pr-2"
+                style={{ width: "50px", height: "50px" }}
+              />
+              <span className="d-block pl-2" />
+              <span style={{ display: "block", paddingRight: "2px" }}>End</span>
+            </li>
+            <li className="d-flex align-items-center text-white">
+              <img
+                src={wallImg}
+                alt="Image 3"
+                className="pr-2"
+                style={{ width: "50px", height: "50px" }}
+              />
+              <span className="d-block pl-2" />
+              <span style={{ display: "block", paddingRight: "2px" }}>
+                Wall
+              </span>
+            </li>
+            <li className="d-flex align-items-center text-white">
+              <img
+                src={unvisitedImg}
+                alt="Image 4"
+                className="pr-2"
+                style={{ width: "50px", height: "50px" }}
+              />
+              <span className="d-block pl-2" />
+              <span style={{ display: "block", paddingRight: "2px" }}>
+                Unvisited
+              </span>
+            </li>
+            <li className="d-flex align-items-center text-white">
+              <img
+                src={visitedImg}
+                alt="Image 5"
+                className="pr-2"
+                style={{ width: "50px", height: "50px" }}
+              />
+              <span className="d-block pl-2" />
+              <span style={{ display: "block", paddingRight: "2px" }}>
+                Visited
+              </span>
+            </li>
+            <li
+              className="d-flex align-items-center text-white"
+              style={{ paddingRight: "10px" }}
+            >
+              <img
+                src={pathImg}
+                alt="Image 6"
+                className="pr-2"
+                style={{ width: "50px", height: "50px" }}
+              />
+              <span className="d-block pl-2" />
+              <span style={{ display: "block", paddingRight: "2px" }}>
+                Path
+              </span>
+            </li>
+          </ul>
+        </div>
+        <canvas
+          className="mx-auto d-block"
+          id="rectangle"
+          ref={canvasRef}
+          width="1520"
+          height="560"
+          style={{
+            position: "absolute",
+            // top: "50%",
+            // left: "50%",
+            // transform: "translate(-50%, -50%)",
+          }}
+          // style={{ display: None }}
+        ></canvas>
+        <canvas
+          ref={canvasCoord}
+          width="1520"
+          className="mx-auto d-block"
+          height="560"
+          id="InvRectangle"
+          style={{
+            position: "absolute",
+            // top: "50%",
+            // left: "50%",
+            // transform: "translate(-50%, -50%)",
+          }}
+          // onMouseMove={(e) => {
+          //   HandleMouseMove(
+          //     e,
+          //     {
+          //       left: canvasCoord.current.getBoundingClientRect().left,
+          //       right: canvasCoord.current.getBoundingClientRect().right,
+          //       top: canvasCoord.current.getBoundingClientRect().top,
+          //     },
+          //     canvasCoord.current
+          //   );
+          // }}
+          onMouseDown={(e) => {
+            handleMouseDown(
+              e,
+              {
+                left: canvasCoord.current.getBoundingClientRect().left,
+                right: canvasCoord.current.getBoundingClientRect().right,
+                top: canvasCoord.current.getBoundingClientRect().top,
+              },
+              canvasCoord.current
+            );
+          }}
+          onMouseMove={(e) => {
+            handleMouseEnter(
+              e,
+              {
+                left: canvasCoord.current.getBoundingClientRect().left,
+                right: canvasCoord.current.getBoundingClientRect().right,
+                top: canvasCoord.current.getBoundingClientRect().top,
+              },
+              canvasCoord.current
+            );
+          }}
+          onMouseUp={() => handleMouseUp()}
+          onMouseLeave={() => handleMouseUp()}
+        ></canvas>
+      </div>
     </div>
   );
 }

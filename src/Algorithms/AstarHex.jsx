@@ -12,7 +12,7 @@ const hexProps = {
 };
 
 const canvasState = {
-  canvasSize: { canvasWidth: 1000, canvasHeight: 800 },
+  canvasSize: { canvasWidth: 1520, canvasHeight: 560 },
   hexParams: GetHexParameters(),
 };
 

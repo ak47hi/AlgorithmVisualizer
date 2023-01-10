@@ -1,5 +1,25 @@
-.hexagon {
-    position: absolute;
-    border-radius: 10px 10px 0 0;
-    transform: rotate(60deg);
+.navbar {
+  background-color: #3498db;
+  font-family: "Helvetica Neue", sans-serif;
+  padding: 15px;
+}
+
+.navbar a {
+  color: white;
+  text-decoration: none;
+  font-size: 18px;
+}
+
+.navbar select {
+  font-size: 18px;
+}
+
+.navbar:hover {
+  background-color: #2980b9;
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    background-color: #2980b9;
   }
+}
