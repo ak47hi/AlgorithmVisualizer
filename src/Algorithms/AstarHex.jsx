@@ -27,7 +27,7 @@ function GetHexParameters() {
 export function Astar(grid, startNode, finishNode) {
   const visitedNodesInOrder = [];
   startNode.distance = 0;
-  console.log(getHeuristicDistance(startNode, finishNode));
+  // console.log(getHeuristicDistance(startNode, finishNode));
   startNode.heuristicDistance = getHeuristicDistance(startNode, finishNode);
   startNode.totalDistance = 0 + startNode.heuristicDistance;
   const unvisitedNodes = getAllNodes(grid);
@@ -75,7 +75,7 @@ function getHeuristicDistance(node, finishNode) {
 
 function updateUnvisitedNeighbors(node, grid, finishNode) {
   const unvisitedNeighbors = getHexUnvisitedNeighbors(node, grid);
-  console.log(unvisitedNeighbors);
+  // console.log(unvisitedNeighbors);
   for (const neighbor of unvisitedNeighbors) {
     let avgDistance = getHeuristicDistance(neighbor, finishNode);
     if (

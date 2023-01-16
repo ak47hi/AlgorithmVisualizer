@@ -9,6 +9,7 @@ import wallImg from "../Pictures/brown_hex_adobe_express.svg";
 import unvisitedImg from "../Pictures/grey_hex_adobe_express.svg";
 import visitedImg from "../Pictures/orange_hex_adobe_express.svg";
 import Button from "react-bootstrap/Button";
+import { clone, cloneDeep } from "lodash";
 
 import "./HexGrid.css";
 import {
@@ -73,6 +74,12 @@ export default function Canvas() {
 
   const [selectedAlgorithm, setSelectedAlgorithm] = useState("BFS");
 
+  // const [start, setStart] = useState(
+  //   gridMap.grid[
+  //     findNodeIndexInGrid(START_NODE_ROW, START_NODE_COL, gridMap.grid).i
+  //   ][findNodeIndexInGrid(START_NODE_ROW, START_NODE_COL, gridMap.grid).j]
+  // );
+
   // CREATING NODE
 
   // THIS USEEFFECT GETS CALLED TO JUST DRAW THE INITIAL GRID OF HEXAGON ON THE CANVAS
@@ -116,6 +123,53 @@ export default function Canvas() {
     );
   }, []);
 
+  useEffect(() => {
+    const canvasSecondCurrent = canvasCoord.current;
+    const ctx = canvasSecondCurrent.getContext("2d");
+    // const { canvasWidth, canvasHeight } = canvasState.canvasSize;
+    const { canvasWidth, canvasHeight } = canvasState.canvasSize;
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      return;
+    }
+    const context = canvas.getContext("2d");
+    DrawHexagons(context);
+    // setGridMap({ ...gridMap, grid: grid });
+    if (!context) {
+      return;
+    }
+    console.log("change");
+    // console.log(grid);
+
+    // to Fill the Finish Node with a color
+    FillHexColor(
+      context,
+      HexToPixel(
+        Hex(
+          FINISH_NODE_COL,
+          FINISH_NODE_ROW,
+          -FINISH_NODE_ROW - FINISH_NODE_COL
+        )
+      ),
+      "red",
+      2
+    );
+    // to Fill the End Node with a color
+    FillHexColor(
+      context,
+      HexToPixel(
+        Hex(START_NODE_COL, START_NODE_ROW, -START_NODE_COL - START_NODE_ROW)
+      ),
+      "green",
+      2
+    );
+
+    console.log("change wallset");
+    for (let wallNode of wallSet) {
+      FillHexColor(ctx, wallNode, "Brown", 1);
+    }
+  }, [selectedAlgorithm]);
   // THIS USEEFFECT GETS CALLED TO JUST DRAW THE INITIAL
 
   // useEffect(() => {
@@ -187,6 +241,10 @@ export default function Canvas() {
     let offsetY = event.clientY - canvasPosition.top;
     const { q, r, s } = CubeRound(PixelToHex(Point(offsetX, offsetY)));
     const object = HexToPixel(Hex(q, r, s));
+
+    // if (q == start.q && r == start.r){
+
+    // }
     // if (!wallSet.has({ x, y }))
     if (
       !Array.from(wallSet).some(
@@ -729,32 +787,40 @@ export default function Canvas() {
   //   }
   // }
 
-  function visualizeAlgorithm(canvasID, algoType) {
-    const grid = gridMap.grid;
+  function visualizeAlgorithm(canvasID) {
+    const grid = cloneDeep(gridMap.grid);
     console.log(grid);
-
+    console.log(START_NODE_ROW, START_NODE_COL);
+    console.log(findNodeIndexInGrid(START_NODE_ROW, START_NODE_COL, grid));
+    console.log(selectedAlgorithm);
     const startNode =
       grid[findNodeIndexInGrid(START_NODE_ROW, START_NODE_COL, grid).i][
         findNodeIndexInGrid(START_NODE_ROW, START_NODE_COL, grid).j
       ];
 
-    console.log(startNode);
+    // console.log(startNode);
 
     const finishNode =
       grid[findNodeIndexInGrid(FINISH_NODE_ROW, FINISH_NODE_COL, grid).i][
         findNodeIndexInGrid(FINISH_NODE_ROW, FINISH_NODE_COL, grid).j
       ];
-    console.log(finishNode);
+    // console.log(finishNode);
     let context = canvasID.getContext("2d");
-    if (selectedAlgorithm == "A*") {
+
+    if (selectedAlgorithm === "A*") {
       const visitedNodesInOrder = Astar(grid, startNode, finishNode);
       const nodesInShortestPathOrder =
         getNodesInShortestPathOrderAstar(finishNode);
+      console.log(JSON.parse(JSON.stringify(visitedNodesInOrder)));
+      console.log(JSON.parse(JSON.stringify(nodesInShortestPathOrder)));
+
       AnimateDijstras(context, visitedNodesInOrder, nodesInShortestPathOrder);
     } else if (selectedAlgorithm === "Dijstra's") {
       const visitedNodesInOrder = dijkstra(grid, startNode, finishNode);
       const nodesInShortestPathOrder =
         getNodesInShortestPathOrderDijstra(finishNode);
+      console.log(JSON.parse(JSON.stringify(visitedNodesInOrder)));
+      console.log(JSON.parse(JSON.stringify(nodesInShortestPathOrder)));
       AnimateDijstras(context, visitedNodesInOrder, nodesInShortestPathOrder);
     } else if (selectedAlgorithm === "BFS") {
       const visitedNodesInOrder = BreadthFirstSearch(
@@ -764,6 +830,8 @@ export default function Canvas() {
       );
       const nodesInShortestPathOrder =
         getNodesInShortestPathOrderBFS(finishNode);
+      console.log(JSON.parse(JSON.stringify(visitedNodesInOrder)));
+      console.log(JSON.parse(JSON.stringify(nodesInShortestPathOrder)));
       AnimateDijstras(context, visitedNodesInOrder, nodesInShortestPathOrder);
     } else {
       return;
@@ -778,7 +846,7 @@ export default function Canvas() {
   ) {
     for (let k = 0; k < visitedNodesInOrder.length; k++) {
       if (k == visitedNodesInOrder.length - 1) {
-        console.log("last node");
+        // console.log("last node");
         setTimeout(() => {
           AnimateHexNodesInOrder(context, nodesInShortestPathOrder);
         }, 50 * k);
@@ -925,7 +993,7 @@ export default function Canvas() {
         </div>
         <Button
           variant="secondary"
-          onClick={() => visualizeAlgorithm(canvasCoord.current, "Dijstra")}
+          onClick={() => visualizeAlgorithm(canvasCoord.current)}
         >
           Visualize
         </Button>

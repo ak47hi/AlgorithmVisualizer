@@ -37,7 +37,7 @@ export function BreadthFirstSearch(grid, startNode, finishNode) {
   while (!!stack.length) {
     //   sortNodesByDistance(unvisitedNodes);
     const closestNode = stack.shift();
-    console.log(closestNode);
+    // console.log(closestNode);
     // count++;
     // if (count == 20) return visitedNodesInOrder;
     // closestNode.isVisited = true;
@@ -47,8 +47,8 @@ export function BreadthFirstSearch(grid, startNode, finishNode) {
     //   continue;
     if (closestNode === finishNode) return visitedNodesInOrder;
     const unvisitedNeighbors = getHexUnvisitedNeighbors(closestNode, grid);
-    console.log(unvisitedNeighbors);
-    console.log(stack);
+    // console.log(unvisitedNeighbors);
+    // console.log(stack);
     for (let i = 0; i < unvisitedNeighbors.length; i++) {
       if (unvisitedNeighbors[i].isWall === true) {
         continue;
