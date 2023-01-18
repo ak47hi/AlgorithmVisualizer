@@ -10,6 +10,8 @@ import unvisitedImg from "../Pictures/grey_hex_adobe_express.svg";
 import visitedImg from "../Pictures/orange_hex_adobe_express.svg";
 import Button from "react-bootstrap/Button";
 import { clone, cloneDeep } from "lodash";
+import { Container, Row, Col } from "react-bootstrap";
+import Footer from "./Footer";
 
 import "./HexGrid.css";
 import {
@@ -74,12 +76,18 @@ export default function Canvas() {
 
   const [selectedAlgorithm, setSelectedAlgorithm] = useState("BFS");
 
-  // const [start, setStart] = useState(
-  //   gridMap.grid[
-  //     findNodeIndexInGrid(START_NODE_ROW, START_NODE_COL, gridMap.grid).i
-  //   ][findNodeIndexInGrid(START_NODE_ROW, START_NODE_COL, gridMap.grid).j]
-  // );
+  const [startHex, updateStartNode] = useState({
+    q: START_NODE_COL,
+    r: START_NODE_ROW,
+    clicked: false,
+  });
+  const [finishHex, updateFinishNode] = useState({
+    q: FINISH_NODE_COL,
+    r: FINISH_NODE_ROW,
+    clicked: false,
+  });
 
+  const [reRenderBool, updateReRenderBool] = useState(false);
   // CREATING NODE
 
   // THIS USEEFFECT GETS CALLED TO JUST DRAW THE INITIAL GRID OF HEXAGON ON THE CANVAS
@@ -145,22 +153,14 @@ export default function Canvas() {
     // to Fill the Finish Node with a color
     FillHexColor(
       context,
-      HexToPixel(
-        Hex(
-          FINISH_NODE_COL,
-          FINISH_NODE_ROW,
-          -FINISH_NODE_ROW - FINISH_NODE_COL
-        )
-      ),
+      HexToPixel(Hex(finishHex.q, finishHex.r, -finishHex.r - finishHex.q)),
       "red",
       2
     );
     // to Fill the End Node with a color
     FillHexColor(
       context,
-      HexToPixel(
-        Hex(START_NODE_COL, START_NODE_ROW, -START_NODE_COL - START_NODE_ROW)
-      ),
+      HexToPixel(Hex(startHex.q, startHex.r, -startHex.q - startHex.r)),
       "green",
       2
     );
@@ -170,6 +170,46 @@ export default function Canvas() {
       FillHexColor(ctx, wallNode, "Brown", 1);
     }
   }, [selectedAlgorithm]);
+
+  useEffect(() => {
+    const canvasSecondCurrent = canvasCoord.current;
+    const ctx = canvasSecondCurrent.getContext("2d");
+    // const { canvasWidth, canvasHeight } = canvasState.canvasSize;
+    const { canvasWidth, canvasHeight } = canvasState.canvasSize;
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      return;
+    }
+    const context = canvas.getContext("2d");
+    DrawHexagons(context);
+    // setGridMap({ ...gridMap, grid: grid });
+    if (!context) {
+      return;
+    }
+    console.log("change");
+    // console.log(grid);
+
+    // to Fill the Finish Node with a color
+    FillHexColor(
+      context,
+      HexToPixel(Hex(finishHex.q, finishHex.r, -finishHex.r - finishHex.q)),
+      "red",
+      2
+    );
+    // to Fill the End Node with a color
+    FillHexColor(
+      context,
+      HexToPixel(Hex(startHex.q, startHex.r, -startHex.q - startHex.r)),
+      "green",
+      2
+    );
+
+    console.log("change wallset");
+    for (let wallNode of wallSet) {
+      FillHexColor(ctx, wallNode, "Brown", 1);
+    }
+  }, [startHex, finishHex, reRenderBool]);
   // THIS USEEFFECT GETS CALLED TO JUST DRAW THE INITIAL
 
   // useEffect(() => {
@@ -214,6 +254,26 @@ export default function Canvas() {
 
     const { q, r, s } = CubeRound(PixelToHex(Point(offsetX, offsetY)));
     const object = HexToPixel(Hex(q, r, s));
+    // console.log(q, startHex.q);
+    // console.log(r, startHex.r);
+    if (q === startHex.q && r === startHex.r) {
+      console.log("in start Node");
+      updateStartNode({ ...startHex, clicked: true });
+      console.log(cloneDeep(startHex));
+      FillHexColor(context, Point(object.x, object.y), "Green", 1);
+      // return;
+      setGridMap({ ...gridMap, mouseIsPressed: true });
+      return;
+    }
+    if (q === finishHex.q && r === finishHex.r) {
+      console.log("in finish Node");
+      updateFinishNode({ ...finishHex, clicked: true });
+      console.log(cloneDeep(finishHex));
+      FillHexColor(context, Point(object.x, object.y), "red", 1);
+      // return;
+      setGridMap({ ...gridMap, mouseIsPressed: true });
+      return;
+    }
 
     if (
       !Array.from(wallSet).some(
@@ -246,6 +306,30 @@ export default function Canvas() {
 
     // }
     // if (!wallSet.has({ x, y }))
+    if (startHex.clicked == true) {
+      updateStartNode({
+        ...startHex,
+        q: q,
+        r: r,
+      });
+      console.log("trying to move the start node");
+      FillHexColor(context, Point(object.x, object.y), "Green", 1);
+      // updateStartGrid(prevStart, r, q);
+      // setGridMap({ ...gridMap, grid: newGrid });
+      return;
+    }
+    if (finishHex.clicked == true) {
+      updateFinishNode({
+        ...finishHex,
+        q: q,
+        r: r,
+      });
+      console.log("trying to move the finish node");
+      FillHexColor(context, Point(object.x, object.y), "red", 1);
+      // updateStartGrid(prevStart, r, q);
+      // setGridMap({ ...gridMap, grid: newGrid });
+      return;
+    }
     if (
       !Array.from(wallSet).some(
         (item) => item.x === object.x && item.y === object.y
@@ -255,6 +339,7 @@ export default function Canvas() {
       setGridMap({ ...gridMap, grid: newGrid, mouseIsPressed: true });
       setWallSet(new Set([...wallSet, object]));
       FillHexColor(context, Point(object.x, object.y), "Brown", 1);
+      // updateStartGrid(prevStart,r,q)
     }
     // console.log(gridMap.grid);
   }
@@ -262,8 +347,22 @@ export default function Canvas() {
   function handleMouseUp() {
     // console.log("in mouse up");
     // console.log(event.clientlet offsetX = event.clientX, event.clientlet offsetY = event.clientY);
+    console.log(startHex);
+    console.log(finishHex);
+    updateStartNode({ ...startHex, clicked: false });
+    updateFinishNode({ ...finishHex, clicked: false });
 
     setGridMap({ ...gridMap, mouseIsPressed: false });
+  }
+
+  function updateStartGrid(prevStart, r, q) {
+    grid = gridMap.grid;
+    startNodeIndex = findNodeIndexInGrid(prevStart.r, prevStart.q, grid);
+    prevStart = grid[startNodeIndex.i][startNodeIndex.j];
+    prevStart.isStart = false;
+    currentNodeIndex = findNodeIndexInGrid(r, q, grid);
+    currStart = grid[currentNodeIndex.i][currentNodeIndex.j];
+    currStart.isStart = true;
   }
 
   // To get the initial grid
@@ -622,7 +721,7 @@ export default function Canvas() {
   // // in which they were visited. Also makes nodes point back to their
   // // previous node, effectively allowing us to compute the shortest path
   // // by backtracking from the finish node.
-  // function dijkstra(grid, startNode, finishNode) {
+  // function dijkstra(grid, startHex, finishNode) {
   //   console.log(grid);
   //   const visitedNodesInOrder = [];
   //   startNode.distance = 0;
@@ -789,20 +888,21 @@ export default function Canvas() {
 
   function visualizeAlgorithm(canvasID) {
     const grid = cloneDeep(gridMap.grid);
+    updateReRenderBool(!reRenderBool);
     console.log(grid);
-    console.log(START_NODE_ROW, START_NODE_COL);
-    console.log(findNodeIndexInGrid(START_NODE_ROW, START_NODE_COL, grid));
+    console.log(startHex.r, startHex.q);
+    console.log(findNodeIndexInGrid(startHex.r, startHex.q, grid));
     console.log(selectedAlgorithm);
     const startNode =
-      grid[findNodeIndexInGrid(START_NODE_ROW, START_NODE_COL, grid).i][
-        findNodeIndexInGrid(START_NODE_ROW, START_NODE_COL, grid).j
+      grid[findNodeIndexInGrid(startHex.r, startHex.q, grid).i][
+        findNodeIndexInGrid(startHex.r, startHex.q, grid).j
       ];
 
     // console.log(startNode);
 
     const finishNode =
-      grid[findNodeIndexInGrid(FINISH_NODE_ROW, FINISH_NODE_COL, grid).i][
-        findNodeIndexInGrid(FINISH_NODE_ROW, FINISH_NODE_COL, grid).j
+      grid[findNodeIndexInGrid(finishHex.r, finishHex.q, grid).i][
+        findNodeIndexInGrid(finishHex.r, finishHex.q, grid).j
       ];
     // console.log(finishNode);
     let context = canvasID.getContext("2d");
@@ -967,7 +1067,7 @@ export default function Canvas() {
   }
   return (
     <div>
-      <nav className="navbar navbar-expand-lg navbar-light bg-black">
+      <nav className="navbar navbar-expand-lg navbar-light bg-black py-0">
         <a href="/" className="navbar-brand mb-0 ">
           <img
             className="d-inline-block align-top"
@@ -1137,9 +1237,10 @@ export default function Canvas() {
             );
           }}
           onMouseUp={() => handleMouseUp()}
-          onMouseLeave={() => handleMouseUp()}
+          // onMouseLeave={() => handleMouseUp()}
         ></canvas>
       </div>
+      <Footer selectedAlgorithm={selectedAlgorithm} />
     </div>
   );
 }

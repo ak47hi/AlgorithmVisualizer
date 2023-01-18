@@ -5,6 +5,7 @@ import Canvas from "./PathfindingVisualizer/Canvas";
 import SquareGrid from "./PathfindingVisualizer/chatgpt";
 import PathfindingVisualizer from "./PathfindingVisualizer/PathfindingVisualizer";
 // import "./App.css";
+// import Footer from "./PathFindingInHexGrid/Footer";
 
 function App() {
   const [count, setCount] = useState(0);
@@ -14,7 +15,7 @@ function App() {
       <PathFindingHexGrid />
 
       {/* <Canvas /> */}
-
+      {/* <Footer /> */}
       {/* <SquareGrid /> */}
       {/* <PathfindingVisualizer /> */}
     </div>
