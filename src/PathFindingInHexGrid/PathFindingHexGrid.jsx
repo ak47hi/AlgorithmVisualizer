@@ -63,7 +63,10 @@ export default function Canvas() {
   };
 
   const [canvasState, setCanvasState] = useState({
-    canvasSize: { canvasWidth: 1520, canvasHeight: 560 },
+    canvasSize: {
+      canvasWidth: window.innerWidth,
+      canvasHeight: window.innerHeight - 126 - 40,
+    },
     hexParams: GetHexParameters(),
   });
 
@@ -169,7 +172,7 @@ export default function Canvas() {
     for (let wallNode of wallSet) {
       FillHexColor(ctx, wallNode, "Brown", 1);
     }
-  }, [selectedAlgorithm]);
+  }, [selectedAlgorithm, window.innerWidth]);
 
   useEffect(() => {
     const canvasSecondCurrent = canvasCoord.current;
@@ -209,7 +212,7 @@ export default function Canvas() {
     for (let wallNode of wallSet) {
       FillHexColor(ctx, wallNode, "Brown", 1);
     }
-  }, [startHex, finishHex, reRenderBool]);
+  }, [startHex, finishHex, reRenderBool, window.innerWidth]);
   // THIS USEEFFECT GETS CALLED TO JUST DRAW THE INITIAL
 
   // useEffect(() => {
@@ -1181,8 +1184,8 @@ export default function Canvas() {
           className="mx-auto d-block"
           id="rectangle"
           ref={canvasRef}
-          width="1520"
-          height="560"
+          width={window.innerWidth}
+          height={window.innerHeight - 126 - 40}
           style={{
             position: "absolute",
             // top: "50%",
@@ -1193,9 +1196,9 @@ export default function Canvas() {
         ></canvas>
         <canvas
           ref={canvasCoord}
-          width="1520"
+          width={window.innerWidth}
           className="mx-auto d-block"
-          height="560"
+          height={window.innerHeight - 126 - 40}
           id="InvRectangle"
           style={{
             position: "absolute",
